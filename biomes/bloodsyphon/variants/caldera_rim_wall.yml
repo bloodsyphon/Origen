@@ -13,10 +13,10 @@ colors:
 
 vars: &variables
   base: 74
-  wallHeight: 225
-  capHeight: 34
-  snowLine: 176
-  cliffNoiseStrength: 18
+  skirtHeight: 42
+  coneHeight: 218
+  summitHeight: 30
+  cliffNoiseStrength: 13
 
 terrain:
   sampler:
@@ -25,42 +25,67 @@ terrain:
     variables: *variables
     expression: |
       -y + base
-      + clamp(rimMass(x, z), 0, 1)^1.35 * wallHeight
-      + clamp(peakCaps(x, z), 0, 1)^2 * capHeight
-      + strata(x, y * 1.5, z) * cliffNoiseStrength * lerp(y, 90, 0.25, 260, 1)
+      + skirt(x, z) * skirtHeight
+      + clamp(coneShape(x, z), 0, 1)^1.22 * coneHeight
+      + clamp(summitPush(x, z), 0, 1)^2.6 * summitHeight
+      + strata(x, y * 1.5, z) * cliffNoiseStrength * lerp(y, 90, 0.18, 275, 1)
     functions:
       clamp:
         arguments: [x, a, b]
         expression: min(max(x, a), b)
     samplers:
-      rimMass:
+      skirt:
+        dimensions: 2
+        type: PROBABILITY
+        sampler:
+          type: FBM
+          octaves: 3
+          gain: 0.45
+          lacunarity: 2.1
+          sampler:
+            type: OPEN_SIMPLEX_2S
+            frequency: 0.0012
+            salt: 70100
+      coneShape:
         dimensions: 2
         type: DOMAIN_WARP
-        amplitude: 32
+        amplitude: 42
         warp:
           type: OPEN_SIMPLEX_2S
-          frequency: 0.003
+          frequency: 0.0026
           salt: 70101
         sampler:
           dimensions: 2
-          type: RIDGED
-          octaves: 5
-          gain: 0.46
-          lacunarity: 2.15
+          type: LINEAR
+          min: 1
+          max: 0.08
           sampler:
-            type: OPEN_SIMPLEX_2S
-            frequency: 0.0019
+            type: CELLULAR
+            distance: Euclidean
+            return: Distance
+            frequency: 0.0028
+            jitter: 0.45
             salt: 70102
-      peakCaps:
+      summitPush:
         dimensions: 2
-        type: FBM
-        octaves: 3
-        gain: 0.5
-        lacunarity: 2.4
-        sampler:
+        type: DOMAIN_WARP
+        amplitude: 24
+        warp:
           type: OPEN_SIMPLEX_2S
-          frequency: 0.009
+          frequency: 0.004
           salt: 70103
+        sampler:
+          dimensions: 2
+          type: LINEAR
+          min: 1
+          max: 0.35
+          sampler:
+            type: CELLULAR
+            distance: Euclidean
+            return: Distance
+            frequency: 0.0028
+            jitter: 0.45
+            salt: 70102
       strata:
         dimensions: 3
         type: OPEN_SIMPLEX_2S

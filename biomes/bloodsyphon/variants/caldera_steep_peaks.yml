@@ -13,10 +13,10 @@ colors:
 
 vars: &variables
   base: 78
-  shoulderHeight: 68
-  peakHeight: 220
-  summitHeight: 28
-  cliffRoughness: 22
+  apronHeight: 50
+  coneHeight: 216
+  summitHeight: 32
+  cliffRoughness: 14
 
 terrain:
   sampler:
@@ -25,16 +25,16 @@ terrain:
     variables: *variables
     expression: |
       -y + base
-      + shoulder(x, z) * shoulderHeight
-      + clamp(peakMass(x, z), 0, 1)^1.75 * peakHeight
-      + clamp(summits(x, z), 0, 1)^3.2 * summitHeight
-      + cliffNoise(x, y * 1.6, z) * cliffRoughness * lerp(y, 90, 0.1, 285, 1)
+      + apron(x, z) * apronHeight
+      + clamp(coneShape(x, z), 0, 1)^1.34 * coneHeight
+      + clamp(summit(x, z), 0, 1)^2.8 * summitHeight
+      + cliffNoise(x, y * 1.6, z) * cliffRoughness * lerp(y, 95, 0.1, 285, 1)
     functions:
       clamp:
         arguments: [x, a, b]
         expression: min(max(x, a), b)
     samplers:
-      shoulder:
+      apron:
         dimensions: 2
         type: PROBABILITY
         sampler:
@@ -51,35 +51,48 @@ terrain:
             lacunarity: 2.2
             sampler:
               type: OPEN_SIMPLEX_2S
-              frequency: 0.0016
+              frequency: 0.0013
               salt: 70202
-      peakMass:
+      coneShape:
         dimensions: 2
         type: DOMAIN_WARP
-        amplitude: 42
+        amplitude: 36
         warp:
           type: OPEN_SIMPLEX_2S
-          frequency: 0.004
+          frequency: 0.003
           salt: 70203
         sampler:
-          type: RIDGED
-          octaves: 5
-          gain: 0.5
-          lacunarity: 2.05
+          dimensions: 2
+          type: LINEAR
+          min: 1
+          max: 0.06
           sampler:
-            type: OPEN_SIMPLEX_2S
-            frequency: 0.0024
+            type: CELLULAR
+            distance: Euclidean
+            return: Distance
+            frequency: 0.0036
+            jitter: 0.5
             salt: 70204
-      summits:
+      summit:
         dimensions: 2
-        type: FBM
-        octaves: 2
-        gain: 0.5
-        lacunarity: 2.4
-        sampler:
+        type: DOMAIN_WARP
+        amplitude: 22
+        warp:
           type: OPEN_SIMPLEX_2S
-          frequency: 0.007
+          frequency: 0.005
           salt: 70205
+        sampler:
+          dimensions: 2
+          type: LINEAR
+          min: 1
+          max: 0.34
+          sampler:
+            type: CELLULAR
+            distance: Euclidean
+            return: Distance
+            frequency: 0.0036
+            jitter: 0.5
+            salt: 70204
       cliffNoise:
         dimensions: 3
         type: FBM
