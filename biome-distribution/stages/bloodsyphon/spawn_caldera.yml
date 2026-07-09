@@ -1,0 +1,201 @@
+vars: &variables
+  centerX: 0
+  centerZ: 0
+
+  floorRadius: 850
+  lowlandsRadius: 1800
+  foothillsRadius: 3000
+  rimRadius: 4300
+  fadeRadius: 5400
+
+  warpAmplitude: 260
+  warpFrequency: 0.00075
+
+calderaDistance: &calderaDistance
+  dimensions: 2
+  type: EXPRESSION
+  variables: *variables
+  expression: |
+    sqrt((x - centerX)^2 + (z - centerZ)^2) + rimWarp(x, z) * warpAmplitude
+  samplers:
+    rimWarp:
+      dimensions: 2
+      type: FBM
+      octaves: 3
+      gain: 0.45
+      lacunarity: 2.1
+      sampler:
+        type: OPEN_SIMPLEX_2
+        frequency: ${biome-distribution/stages/bloodsyphon/spawn_caldera.yml:vars.warpFrequency}
+        salt: 78291
+
+bandSampler: &bandSampler
+  dimensions: 2
+  type: EXPRESSION
+  variables: *variables
+  samplers:
+    distance: *calderaDistance
+
+stages:
+  - type: REPLACE
+    from: land
+    sampler:
+      <<: *bandSampler
+      expression: if(distance(x, z) < floorRadius, 1, -1)
+    to:
+      SELF: 1
+      _bloodsyphon_caldera_floor: 1
+
+  - type: REPLACE
+    from: land
+    sampler:
+      <<: *bandSampler
+      expression: if(distance(x, z) >= floorRadius && distance(x, z) < lowlandsRadius, 1, -1)
+    to:
+      SELF: 1
+      _bloodsyphon_caldera_lowlands: 1
+
+  - type: REPLACE
+    from: land
+    sampler:
+      <<: *bandSampler
+      expression: if(distance(x, z) >= lowlandsRadius && distance(x, z) < foothillsRadius, 1, -1)
+    to:
+      SELF: 1
+      _bloodsyphon_caldera_foothills: 1
+
+  - type: REPLACE
+    from: land
+    sampler:
+      <<: *bandSampler
+      expression: if(distance(x, z) >= foothillsRadius && distance(x, z) < rimRadius && rimBreaks(x, z) > 0.16, 1, -1)
+      samplers:
+        distance: *calderaDistance
+        rimBreaks:
+          dimensions: 2
+          type: PROBABILITY
+          sampler:
+            type: DOMAIN_WARP
+            amplitude: 90
+            warp:
+              type: OPEN_SIMPLEX_2
+              frequency: 0.0012
+              salt: 8821
+            sampler:
+              type: OPEN_SIMPLEX_2
+              frequency: 0.0009
+              salt: 8822
+    to:
+      SELF: 1
+      _bloodsyphon_caldera_rim: 1
+
+  - type: REPLACE
+    from: land
+    sampler:
+      <<: *bandSampler
+      expression: |
+        if(
+          distance(x, z) >= rimRadius && distance(x, z) < fadeRadius &&
+          ((fadeRadius - distance(x, z)) / (fadeRadius - rimRadius)) > transitionNoise(x, z),
+          1,
+          -1
+        )
+      samplers:
+        distance: *calderaDistance
+        transitionNoise:
+          dimensions: 2
+          type: PROBABILITY
+          sampler:
+            type: DOMAIN_WARP
+            amplitude: 120
+            warp:
+              type: OPEN_SIMPLEX_2
+              frequency: 0.001
+              salt: 9821
+            sampler:
+              type: OPEN_SIMPLEX_2
+              frequency: 0.0016
+              salt: 9822
+    to:
+      SELF: 1
+      _bloodsyphon_caldera_transition: 1
+
+  - type: REPLACE
+    from: _bloodsyphon_caldera_floor
+    sampler:
+      type: CELLULAR
+      return: CellValue
+      jitter: ${customization.yml:biomeSpread.cellJitter}
+      frequency: 1 / ${customization.yml:biomeSpread.cellDistance}
+      salt: 61001
+    to:
+      VERDANT_VALLEYS: 4
+      WATERY_WILDS: 3
+      MURKY_MARSHLANDS: 2
+      FOSSILIZED_FENLANDS: 2
+      FLOWERING_FOREST: 2
+      BROADLEAF_FOREST: 2
+
+  - type: REPLACE
+    from: _bloodsyphon_caldera_lowlands
+    sampler:
+      type: CELLULAR
+      return: CellValue
+      jitter: ${customization.yml:biomeSpread.cellJitter}
+      frequency: 1 / ${customization.yml:biomeSpread.cellDistance}
+      salt: 61002
+    to:
+      VERDANT_VALLEYS: 3
+      BAMBOO_BASIN: 3
+      BLACK_FOREST: 2
+      TALL_TIMBERLAND: 2
+      SCARLET_SANCTUARY: 1
+      SECLUDED_VALLEY_OUTER: 1
+
+  - type: REPLACE
+    from: _bloodsyphon_caldera_foothills
+    sampler:
+      type: CELLULAR
+      return: CellValue
+      jitter: ${customization.yml:biomeSpread.cellJitter}
+      frequency: 1 / ${customization.yml:biomeSpread.cellDistance}
+      salt: 61003
+    to:
+      BLACK_FOREST: 3
+      TALL_TIMBERLAND: 3
+      BAMBOO_BASIN: 2
+      WHITE_WALLOWS: 2
+      BADLANDS_BALCONIES: 2
+      GLOOMY_GORGE: 1
+
+  - type: REPLACE
+    from: _bloodsyphon_caldera_rim
+    sampler:
+      type: CELLULAR
+      return: CellValue
+      jitter: ${customization.yml:biomeSpread.cellJitter}
+      frequency: 1 / ${customization.yml:biomeSpread.cellDistance}
+      salt: 61004
+    to:
+      VERTICAL_VISTAS: 4
+      ALPINE_ASCENDANCY: 4
+      MOUNTAIN_MIRRORS: 3
+      CANOPY_CASCADES: 2
+      SNOWY_SPIRES: 2
+      GLOOMY_GORGE: 1
+
+  - type: REPLACE
+    from: _bloodsyphon_caldera_transition
+    sampler:
+      type: CELLULAR
+      return: CellValue
+      jitter: ${customization.yml:biomeSpread.cellJitter}
+      frequency: 1 / ${customization.yml:biomeSpread.cellDistance}
+      salt: 61005
+    to:
+      VERTICAL_VISTAS: 3
+      ALPINE_ASCENDANCY: 2
+      MOUNTAIN_MIRRORS: 2
+      BLACK_FOREST: 2
+      TALL_TIMBERLAND: 2
+      VERDANT_VALLEYS: 1
