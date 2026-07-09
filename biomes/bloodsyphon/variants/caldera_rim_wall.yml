@@ -1,0 +1,100 @@
+id: BLOODSYPHON_CALDERA_RIM_WALL
+type: BIOME
+vanilla: minecraft:jagged_peaks
+color: 0xb8c6d6
+extends: [ CARVING_LAND, BASE ]
+
+colors:
+  sky: 0xb8d8ff
+  fog: 0xd8e8f5
+  grass: 0x6f9d63
+  foliage: 0x6f9d63
+  water: 0x5c93bd
+
+vars: &variables
+  base: 74
+  wallHeight: 225
+  capHeight: 34
+  snowLine: 176
+  cliffNoiseStrength: 18
+
+terrain:
+  sampler:
+    dimensions: 3
+    type: EXPRESSION
+    variables: *variables
+    expression: |
+      -y + base
+      + clamp(rimMass(x, z), 0, 1)^1.35 * wallHeight
+      + clamp(peakCaps(x, z), 0, 1)^2 * capHeight
+      + strata(x, y * 1.5, z) * cliffNoiseStrength * lerp(y, 90, 0.25, 260, 1)
+    functions:
+      clamp:
+        arguments: [x, a, b]
+        expression: min(max(x, a), b)
+    samplers:
+      rimMass:
+        dimensions: 2
+        type: DOMAIN_WARP
+        amplitude: 32
+        warp:
+          type: OPEN_SIMPLEX_2S
+          frequency: 0.003
+          salt: 70101
+        sampler:
+          dimensions: 2
+          type: RIDGED
+          octaves: 5
+          gain: 0.46
+          lacunarity: 2.15
+          sampler:
+            type: OPEN_SIMPLEX_2S
+            frequency: 0.0019
+            salt: 70102
+      peakCaps:
+        dimensions: 2
+        type: FBM
+        octaves: 3
+        gain: 0.5
+        lacunarity: 2.4
+        sampler:
+          type: OPEN_SIMPLEX_2S
+          frequency: 0.009
+          salt: 70103
+      strata:
+        dimensions: 3
+        type: OPEN_SIMPLEX_2S
+        frequency: 0.026
+        salt: 70104
+
+slant:
+  - threshold: 0.25
+    palette:
+      - ROCKY_SLANT_DARK: 319
+      - << meta.yml:palette-bottom
+  - threshold: 0.72
+    palette:
+      - BLOCK:minecraft:stone: 319
+      - << meta.yml:palette-bottom
+
+palette:
+  - SNOW: 319
+  - GRASS_SNOW_MIX: 176
+  - GRASS: 96
+  - SAND: 64
+  - << meta.yml:palette-bottom
+
+features:
+  preprocessors:
+    - POWDER_SNOW_DEPOSITS
+  slabs:
+    - SNOW_LAYERS
+  landforms:
+    - MOSSY_BOULDERS
+    - SMALL_MOSSY_BOULDER_PATCHES
+  trees:
+    - COLD_MOUNTAIN_TREES
+  flora:
+    - GRASS_SPARSE
+  postprocessors:
+    - TREE_SNOW

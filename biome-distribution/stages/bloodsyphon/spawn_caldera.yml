@@ -2,14 +2,15 @@ vars: &variables
   centerX: 0
   centerZ: 0
 
-  floorRadius: 850
-  lowlandsRadius: 1800
-  foothillsRadius: 3000
-  rimRadius: 4300
-  fadeRadius: 5400
+  floorRadius: 400
+  lowlandsRadius: 800
+  foothillsRadius: 1200
+  mountainRadius: 1500
+  rimRadius: 2500
+  fadeRadius: 3600
 
-  warpAmplitude: 260
-  warpFrequency: 0.00075
+  warpAmplitude: 130
+  warpFrequency: 0.0014
 
 calderaDistance: &calderaDistance
   dimensions: 2
@@ -68,7 +69,7 @@ stages:
     from: land
     sampler:
       <<: *bandSampler
-      expression: if(distance(x, z) >= foothillsRadius && distance(x, z) < rimRadius && rimBreaks(x, z) > 0.16, 1, -1)
+      expression: if(distance(x, z) >= foothillsRadius && distance(x, z) < mountainRadius && rimBreaks(x, z) > 0.16, 1, -1)
       samplers:
         distance: *calderaDistance
         rimBreaks:
@@ -87,7 +88,32 @@ stages:
               salt: 8822
     to:
       SELF: 1
-      _bloodsyphon_caldera_rim: 1
+      _bloodsyphon_caldera_mountains: 1
+
+  - type: REPLACE
+    from: land
+    sampler:
+      <<: *bandSampler
+      expression: if(distance(x, z) >= mountainRadius && distance(x, z) < rimRadius && rimBreaks(x, z) > 0.08, 1, -1)
+      samplers:
+        distance: *calderaDistance
+        rimBreaks:
+          dimensions: 2
+          type: PROBABILITY
+          sampler:
+            type: DOMAIN_WARP
+            amplitude: 75
+            warp:
+              type: OPEN_SIMPLEX_2
+              frequency: 0.0018
+              salt: 8831
+            sampler:
+              type: OPEN_SIMPLEX_2
+              frequency: 0.0013
+              salt: 8832
+    to:
+      SELF: 1
+      _bloodsyphon_caldera_extreme_rim: 1
 
   - type: REPLACE
     from: land
@@ -169,7 +195,7 @@ stages:
       GLOOMY_GORGE: 1
 
   - type: REPLACE
-    from: _bloodsyphon_caldera_rim
+    from: _bloodsyphon_caldera_mountains
     sampler:
       type: CELLULAR
       return: CellValue
@@ -183,6 +209,19 @@ stages:
       CANOPY_CASCADES: 2
       SNOWY_SPIRES: 2
       GLOOMY_GORGE: 1
+
+  - type: REPLACE
+    from: _bloodsyphon_caldera_extreme_rim
+    sampler:
+      type: CELLULAR
+      return: CellValue
+      jitter: ${customization.yml:biomeSpread.cellJitter}
+      frequency: 1 / ${customization.yml:biomeSpread.cellDistance}
+      salt: 61006
+    to:
+      BLOODSYPHON_CALDERA_RIM_WALL: 3
+      BLOODSYPHON_CALDERA_STEEP_PEAKS: 2
+      ALPINE_ASCENDANCY: 1
 
   - type: REPLACE
     from: _bloodsyphon_caldera_transition
